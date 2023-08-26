@@ -33,7 +33,7 @@
         let prevPlayerZ = 0;
 
         const yNoise = 0.5;
-        const terranCubedArea = 64;
+        const terranCubedArea = 128;
         const cameraMovementSpeed = 1;
 
         // Usage
@@ -158,66 +158,83 @@ function onKeyPress(event) {
     genChunk();
     setPlayerY(playerX,playerZ)
 }
-function genChunk(){   
+function genChunk(){ 
+    
+    
     if(Math.sqrt((playerX-prevPlayerX)*(playerX-prevPlayerX)) > 0){
+        let toRemove = 0
+        //ADD
         if((playerX-prevPlayerX) > 0){
-        for(i=playerX+terranCubedArea/2-1;i<=playerX+terranCubedArea/2;i++){
             for(j=playerZ-terranCubedArea/2;j<=playerZ+terranCubedArea/2;j++){
                 const material = new THREE.MeshBasicMaterial({ map: groundtexture });
                 const cube = new THREE.Mesh(geometry, material);
-                cube.position.x = i
+                cube.position.x = playerX+terranCubedArea/2
                 cube.position.y = customRNG.next() * yNoise
                 cube.position.z = j
                 cube.rotation.x = -(Math.PI / 2);
                 map.add(cube);
-        }
-        }
+       
+        } 
+        toRemove = (playerX-terranCubedArea/2)
     }
     if((playerX-prevPlayerX) < 0){
-        for(i=playerX-terranCubedArea/2;i<=playerX-terranCubedArea/2;i++){
             for(j=playerZ-terranCubedArea/2;j<=playerZ+terranCubedArea/2;j++){
                 const material = new THREE.MeshBasicMaterial({ map: groundtexture });
                 const cube = new THREE.Mesh(geometry, material);
-                cube.position.x = i
+                cube.position.x = playerX-terranCubedArea/2
                 cube.position.y = customRNG.next() * yNoise
                 cube.position.z = j
                 cube.rotation.x = -(Math.PI / 2);
                 map.add(cube);
+                
         }
-        }
+        toRemove = (playerX+terranCubedArea/2) 
     }
+
+
+
     }
     if(Math.sqrt((playerZ-prevPlayerZ)*(playerZ-prevPlayerZ)) > 0){
         if((playerZ-prevPlayerZ) > 0){
-        for(i=playerZ+terranCubedArea/2-1;i<=playerZ+terranCubedArea/2;i++){
             for(j=playerX-terranCubedArea/2;j<=playerX+terranCubedArea/2;j++){
                 const material = new THREE.MeshBasicMaterial({ map: groundtexture });
                 const cube = new THREE.Mesh(geometry, material);
                 cube.position.x = j
                 cube.position.y = customRNG.next() * yNoise
-                cube.position.z = i
+                cube.position.z = playerZ+terranCubedArea/2
                 cube.rotation.x = -(Math.PI / 2);
                 map.add(cube);
         }
-        }
+        
     }
     if((playerZ-prevPlayerZ) < 0){
-        for(i=playerZ-terranCubedArea/2;i<=playerZ-terranCubedArea/2;i++){
             for(j=playerX-terranCubedArea/2;j<=playerX+terranCubedArea/2;j++){
                 const material = new THREE.MeshBasicMaterial({ map: groundtexture });
                 const cube = new THREE.Mesh(geometry, material);
                 cube.position.x = j
                 cube.position.y = customRNG.next() * yNoise
-                cube.position.z = i
+                cube.position.z = playerZ-terranCubedArea/2
                 cube.rotation.x = -(Math.PI / 2);
                 map.add(cube);
         }
-        }
     }
+    }
+//REMOVE
+     const toRemoveMap = new THREE.Object3D();
+    for (const child of map.children) {
+        if(Math.sqrt(((child.position.x-playerX) * (child.position.x-playerX))+ ((child.position.z-playerZ) * (child.position.z-playerZ)))> ((terranCubedArea/2)+((terranCubedArea/4)))){
+            
+            toRemoveMap.add(child);
+        }
+    };
+    for (const child of toRemoveMap.children) {
+            map.remove(child);
+    };
+   
+    scene.add(map);
     }
  
-scene.add(map); 
-}
+
 
 function decimalToHex(decimal) {
   const maxValue = 0xFFFFFF; // Maximum value for RGB
