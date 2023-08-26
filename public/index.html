@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Example</title>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script>
+        class CustomRandom {
+        constructor(seed) {
+            this.seed = seed;
+        }
+
+        // Basic PRNG algorithm
+        next() {
+            const maxInt = 2147483647; // 2^31 - 1, a common maximum integer value
+            this.seed = (this.seed * 16807) % maxInt;
+            return this.seed / maxInt;
+        }
+        }
+
+        let moveScene = false;
+        let prevX = 0;
+        let prevY = 0;
+
+        let playerX = 0;
+        let playerY = 0;
+        let playerZ = 0;
+        let prevPlayerX = 0;
+        let prevPlayerY = 0;
+        let prevPlayerZ = 0;
+
+        const yNoise = 0.5;
+        const terranCubedArea = 64;
+        const cameraMovementSpeed = 1;
+
+        // Usage
+        const seedValue = 42; // Replace with your desired seed
+        const customRNG = new CustomRandom(seedValue);
+
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+
+        const map = new THREE.Object3D();
+        const playerGeometry = new THREE.BoxGeometry();
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load('texture.png');
+        const playerMaterial = new THREE.MeshBasicMaterial({ map: texture});
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.y = 1;
+        scene.add(player);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        
+        const geometry = new THREE.PlaneGeometry();
+        const groundtextureLoader = new THREE.TextureLoader();
+        const groundtexture = groundtextureLoader.load('groundTexture.jpg');
+
+        for(let i =(player.position.x-(terranCubedArea/2));i<=(terranCubedArea/2);i++){
+            for(let j =(player.position.z-(terranCubedArea/2));j<=(terranCubedArea/2);j++){
+            const material = new THREE.MeshBasicMaterial({ map: groundtexture });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.x = j
+            cube.position.z = i
+            cube.rotation.x = -(Math.PI / 2);
+            map.add(cube);
+            
+            }
+           
+        } 
+        scene.add(map);
+        camera.position.z = 5;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            // Add event listeners for mouse events
+            
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+
+            
+            
+            renderer.render(scene, camera);
+            
+        }
+        document.addEventListener('keydown', onKeyPress);
+        animate();
+
+        // Define the function to be called when a click event occurs
+    function onMouseDown(event) {
+
+        switch (event.button){
+            case 0:
+                moveScene = true;
+                break;
+        }
+    }   
+    // Define the function to be called when a click event occurs
+    function onMouseMove(event) {
+            if (moveScene){
+                if (prevX==0 && prevY==0){
+                    prevX = event.clientX;
+                    prevY = event.clientY;
+                }
+                deltaX = (prevX - event.clientX)/100;
+                deltaY = (prevY - event.clientY)/100;
+
+                scene.rotation.x += deltaY;
+                scene.rotation.y += deltaX;
+                prevX = event.clientX;
+                prevY = event.clientY;
+           
+            }
+
+    }
+    
+    // Define the function to be called when a click event occurs
+    function onMouseUp(event) {
+        moveScene = false;
+        prevX = 0
+        prevY = 0
+    }
+
+    // Define the function to be called when a key is pressed
+function onKeyPress(event) {
+    const keyCode = event.keyCode;
+    prevPlayerX = playerX
+    prevPlayerY = playerY
+    prevPlayerZ = playerZ
+
+    
+    // Use WASD keys to move the camera
+    switch (keyCode) {
+        case 87: // W key
+        map.position.x -= cameraMovementSpeed;
+            break;
+        case 83: // S key
+        map.position.x += cameraMovementSpeed;
+
+            break;
+        case 65: // A key
+        map.position.z -= cameraMovementSpeed;
+
+            break;
+        case 68: // D key
+        map.position.z += cameraMovementSpeed;
+            break;
+    }    
+    playerX = -(map.position.x)
+    playerZ = -(map.position.z)
+    console.log(playerX+","+playerY+","+playerZ)
+    
+    genChunk();
+    setPlayerY(playerX,playerZ)
+}
+function genChunk(){   
+    if(Math.sqrt((playerX-prevPlayerX)*(playerX-prevPlayerX)) > 0){
+        if((playerX-prevPlayerX) > 0){
+        for(i=playerX+terranCubedArea/2-1;i<=playerX+terranCubedArea/2;i++){
+            for(j=playerZ-terranCubedArea/2;j<=playerZ+terranCubedArea/2;j++){
+                const material = new THREE.MeshBasicMaterial({ map: groundtexture });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.x = i
+                cube.position.y = customRNG.next() * yNoise
+                cube.position.z = j
+                cube.rotation.x = -(Math.PI / 2);
+                map.add(cube);
+        }
+        }
+    }
+    if((playerX-prevPlayerX) < 0){
+        for(i=playerX-terranCubedArea/2;i<=playerX-terranCubedArea/2;i++){
+            for(j=playerZ-terranCubedArea/2;j<=playerZ+terranCubedArea/2;j++){
+                const material = new THREE.MeshBasicMaterial({ map: groundtexture });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.x = i
+                cube.position.y = customRNG.next() * yNoise
+                cube.position.z = j
+                cube.rotation.x = -(Math.PI / 2);
+                map.add(cube);
+        }
+        }
+    }
+    }
+    if(Math.sqrt((playerZ-prevPlayerZ)*(playerZ-prevPlayerZ)) > 0){
+        if((playerZ-prevPlayerZ) > 0){
+        for(i=playerZ+terranCubedArea/2-1;i<=playerZ+terranCubedArea/2;i++){
+            for(j=playerX-terranCubedArea/2;j<=playerX+terranCubedArea/2;j++){
+                const material = new THREE.MeshBasicMaterial({ map: groundtexture });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.x = j
+                cube.position.y = customRNG.next() * yNoise
+                cube.position.z = i
+                cube.rotation.x = -(Math.PI / 2);
+                map.add(cube);
+        }
+        }
+    }
+    if((playerZ-prevPlayerZ) < 0){
+        for(i=playerZ-terranCubedArea/2;i<=playerZ-terranCubedArea/2;i++){
+            for(j=playerX-terranCubedArea/2;j<=playerX+terranCubedArea/2;j++){
+                const material = new THREE.MeshBasicMaterial({ map: groundtexture });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.x = j
+                cube.position.y = customRNG.next() * yNoise
+                cube.position.z = i
+                cube.rotation.x = -(Math.PI / 2);
+                map.add(cube);
+        }
+        }
+    }
+    }
+ 
+scene.add(map); 
+}
+
+function decimalToHex(decimal) {
+  const maxValue = 0xFFFFFF; // Maximum value for RGB
+  const intValue = Math.floor(decimal * maxValue);
+  return intValue.toString(16).toUpperCase();
+}
+
+function setPlayerY(playerx,playerz){
+    map.children.forEach(child => {
+  // Assuming the position is specified as (x, y, z)
+  if (child.position.x == playerx+(-map.position.x + (-playerX)) && child.position.z == playerz +(-map.position.z + (-playerZ))) {
+    player.position.y = child.position.y+0.59;
+    playerY = child.position.y+0.59;
+  }
+});
+
+scene.add(player)
+}
+
+
+
+
+
+
+
+
+
+
+    </script>
+</body>
+</html>
